@@ -1,7 +1,7 @@
 /*
 	This code of your game server.
 	Here you should write logic of your game.
-	Documentation: http://pages.bodjo.net/#docs.game.start.ru
+	Documentation: http://pages.bodjo.net/#docs.game.ru
 
 	Made with <3
 */
@@ -11,7 +11,7 @@ let bodjo = new BodjoGame(promptConfig('config.json'));
 
 bodjo.initClient('./web/'); // directory with client-side scripts and assets
 
-bodjo.on('connect', (player) => {
+bodjo.on('player-connect', (player) => {
 	let username = player.username;
 	console.log(username + ' has connected');
 

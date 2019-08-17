@@ -3,14 +3,15 @@ bodjo.on('connect', socket => {
 	// player has connected to server
 	console.log('connected.')
 
-	// you can run bodjo.render() to render something using received data
-	// bodjo.render() will fire your code from renderer.js
 
 	socket.on('message', function (message) {
-		// this code runs after receiving new message
+		// this code runs after receiving new message with event name 'message'
 		// you can use any other event name, instead of 'message'
-		// bodjo-game uses socket.io, so api partially the same
+		// bodjo-game uses socket.io, so api partially is the same
 		console.log('received message: ', message);
+
+		// you can run bodjo.render() to render something using received data
+		// bodjo.render() will fire your code from renderer.js
 	});
 
 	socket.on('disconnect', function () {
@@ -41,13 +42,13 @@ bodjo.on('connect', socket => {
 		// It will load player's icon image and return html of player
 	});
 
-
+	let timeout = 500;
 	// === Controls ===
-	// You can add different controls, which will display under code, to:
+	// You can add different controls, which will be displayed under code, to:
 	// - run/stop code
 	// - change level/difficulty
 	// - change timeout
-	// - any other reasons
+	// - any other actions
 
 	// Available control elements: Button, Slider, Select
 
@@ -55,13 +56,17 @@ bodjo.on('connect', socket => {
 	bodjo.controls = [
 		Button('play', () => {
 			// user clicked play button
+
+			bodjo.getControl('play').setActive(true);
 		}),
 		Button('pause', () => {
 			// user clicked pause button
 		}),
-		Slider('timeout', 0, 100, (value) => {
+		Slider('timeout', 15, 500, (value) => {
 			// user selected {value} value
-			// value here is an integer from 0 to 100 (inclusive)
+			// value here is an integer from 15 to 500 (inclusive)
+
+			timeout = value;
 		}),
 		Select('difficulty', [
 			'Beginner',
@@ -77,17 +82,16 @@ bodjo.on('connect', socket => {
 	//  web/ui/{control-id}.png
 	// Available icons: play, pause, replay, timeout, difficulty
 
-	// You can take control element after your inition to set values, like that:
+	// You can take control element after your initiation to set values, like that:
 	bodjo.getControl('timeout').set(250);
 
-	// To show, that something is working, you can make buttons be active:
+	// To show, that something is working, you can make buttons active:
 	bodjo.getControl('play').setActive(true);
-
 
 	if (false) {
 		// === Storage ===
 		// To save some options, that user has already set, you can use bodjo.storage
-		// Actually it saves both in cookies and localStorage
+		// Actually, it saves both in cookies and localStorage
 
 		// Examples:
 		bodjo.storage.set('key-string', 'value');
@@ -100,5 +104,72 @@ bodjo.on('connect', socket => {
 		// There are two global variables, which are loaded from your config.json (which you have prompted before)
 		// GAME_NAME (ex. "minesweeper"), GAME_SERVER (ex. "minesweeper-global1")
 		bodjo.storage.set('timeout-'+GAME_NAME, 500); // it will save in timeout-minesweeper and will not touch other games
+	}
+
+
+	if (false) {
+		// === Code ===
+		// Code is available in bodjo.editor.getValue()
+		// To run code you can use either eval() or new Function()
+
+		// Code should be run only when user clicks play button
+		// Usually, it could be a code, that returns function, which will be used every tick
+
+		let onTick;
+		try {
+			// Code in editor:
+			/*  
+				const CONSTANT = 3.1415927;
+
+				function result(action) {
+					return {action};
+				}
+
+				return function onTick(data) {
+					return result('hello');
+				}
+			*/
+			onTick = new Function(bodjo.editor.getValue())();
+		} catch (e) {
+			// Oops, we have error here!
+			// You should inform user that something went wrong
+			// There is a function, which will do that:
+			bodjo.showError(e);
+			return; // do not continue, there was an error
+		}
+
+		// So, for example, we should execute this function to answer server
+		try {
+			let result = onTick(data);
+		} catch (e) {
+			// Oops, error!
+			// Do not forget to stop playing after receiving error
+			bodjo.getControl('play').setActive(false);
+			// Of course, it is only displayed status, stop running bot in your code
+
+			bodjo.showError(e);
+			return;
+		}
+
+		// Now we should check, that answer is correct
+		// This check, of course, should be duplicated in your game server to avoid crashes
+		if (typeof result !== 'object' ||
+			result == null || // typeof null === 'object'
+			Array.isArray(result) || // typeof [] === 'object'
+			typeof result.action !== 'string') {
+
+			// bodjo.showError() also works well with strings
+			bodjo.showError('Your code returned bad response.');
+
+			// That's over, so do not forget to stop our bot process
+			return;
+		}
+
+		// Send our response to game server!
+		setTimeout(() => {
+			socket.emit('turn', result);
+		}, timeout);
+		// Make sure, that messages timeout is controlled by server or client
+		// Do not allow to send messages immediately
 	}
 });

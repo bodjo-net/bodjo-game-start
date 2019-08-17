@@ -1,7 +1,7 @@
 // This code runs only one time, at start
-// So here you can download all your assets, you need
+// So here you can download all your assets, that you need
 // For example, you can put image to web/assets/sprite.png
-// 	and then use it:
+// 	and then use this:
 let image = new Image();
 image.src = 'assets/sprite.png';
 //image.onload = ...
@@ -39,9 +39,9 @@ bodjo.on('render', (data) => {
 			0, Math.PI*2);
 	ctx.fillStyle = 'red';
 	ctx.fill();
-	// it just draws red circle, nothing special :)
+	// this just draws red circle, nothing special
 
-	// you can take even webgl context, but it hasn't tested yet by me
+	// you can take even webgl context, but it hasn't been tested yet by me
 
-	// Good luck! :)
+	// Note: use % of width or height. Try to avoid using pixels as dimensions.
 });
